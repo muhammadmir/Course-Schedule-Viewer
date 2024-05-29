@@ -1,0 +1,23 @@
+[
+    {
+        "School": "Drew University",
+        "Chunk Load": false,
+        "Base Host": "selfservice.drew.edu",
+        "Base Path": "/prod"
+        
+    },
+    {
+        "School": "Purde University",
+        "Chunk Load": true,
+        "Base Host": "selfservice.mypurdue.purdue.edu",
+        "Base Path": "/prod"
+
+    },
+    {
+        "School": "Georgia Tech University",
+        "Chunk Load": true,
+        "Base Host": "oscar.gatech.edu",
+        "Base Path": "/bprod"
+
+    }
+]
