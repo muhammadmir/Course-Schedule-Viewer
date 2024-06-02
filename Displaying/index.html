@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Load Courses</title>
+
+    <!--DataTables Library-->
+    <link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.0.8/r-3.0.2/sp-2.3.1/sl-2.0.3/datatables.min.css"
+        rel="stylesheet">
+    <script
+        src="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.0.8/r-3.0.2/sp-2.3.1/sl-2.0.3/datatables.min.js"></script>
+
+    <!--Bootstrap CSS-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="container" id="fileLoading">
+        <div class="label" id="label">
+            <h4>Load JSON File</h4>
+        </div>
+
+        <div class="alert alert-danger d-flex align-items-center" role="alert" id="alert"><div> There was an error. Check the console. </div></div>
+
+        <div class="mb-3">
+            <label for="formFile" class="form-label">Please Load JSON File Containing Courses</label>
+            <input class="form-control" type="file" id="formFile">
+        </div>
+    </div>
+
+    <div class="container-fluid" id="panel">
+        <div class="title">
+            <p id="keyboardTip"></p>
+        </div>
+
+        <div class="container-fluid d-flex justify-content-left">
+            <a class="btn btn-secondary m-1" role="button" id="paneLogic"></a>
+            <br>
+            <a class="btn btn-secondary m-1" role="button" id="downloadSelectedRows">Download Filtered Results</a>
+        </div>
+
+
+        <div class="table">
+            <table id="courses" class="table row-border compact" width="100%">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>CRN</th>
+                        <th>Section</th>
+                        <th>Subject</th>
+                        <th>Abbreviation</th>
+                        <th>Level</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Credits</th>
+                        <th>Capacity</th>
+                        <th>Registered</th>
+                        <th>Remaining</th>
+                        <th>Waitlisted</th>
+                        <th>Attribute</th>
+                        <th>Type</th>
+                        <th>Time</th>
+                        <th>Day</th>
+                        <th>Location</th>
+                        <th>Nature</th>
+                        <th>Instructor</th>
+                        <th>Calendar Name</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+
+    <!--Bootstrap JS-->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+
+    <!--Project Specifics-->
+    <script type="text/javascript" src="./js/index.js"></script>
+    <link rel="stylesheet" href="./css/index.css">
+</body>
+
+
+<footer>
+    <div class="container-fluid d-flex justify-content-center">
+        <a class="btn btn-primary btn-lg" href="#" role="button">GitHub</a>
+    </div>
+</footer>
+
+</html>

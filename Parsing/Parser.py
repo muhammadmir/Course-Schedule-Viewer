@@ -1,18 +1,14 @@
 from CourseParser import CourseParser
 from bs4 import BeautifulSoup
 from httpx import Client, AsyncClient, Response
-from urllib3 import disable_warnings
 from urllib.parse import urlencode
 from re import findall
 from time import time
 from json import dumps, loads
 from math import ceil
-import tqdm.asyncio
-import tqdm
+from tqdm.asyncio import tqdm
 import asyncio
 import logging
-
-disable_warnings()
 
 LOGGER = logging.getLogger(__name__)
 logging.basicConfig(
@@ -53,7 +49,24 @@ class Parser:
             verify=False,
             timeout=120
         )
-        self.async_session = AsyncClient(
+   
+        self.course_desc = [] # List of strings
+        self.extra_course_info = [] # List of dict
+
+        # Load and utilize mappings of the school matching the profile only.
+        with open('./mappings.json', 'r', encoding='UTF-8') as f: self.mappings = loads(f.read())        
+        self.mappings = {} if self.profile['School'] not in self.mappings else self.mappings[self.profile['School']]
+
+        # Load the mappings for the school into the CourseParser.
+        self.course_parser = CourseParser(self.mappings)
+    
+    def _get_async_session(self):
+        """Create a new async session.
+
+        Returns:
+            AsyncClient: An initalized client for async requests
+        """
+        return AsyncClient(
             base_url='https://' + self.profile['Base Host'] + self.profile['Base Path'],
             headers={
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -66,16 +79,6 @@ class Parser:
             verify=False,
             timeout=120
         )
-        
-        self.course_desc = [] # List of strings
-        self.extra_course_info = [] # List of dict
-
-        # Load and utilize mappings of the school matching the profile only.
-        with open('./mappings.json', 'r', encoding='UTF-8') as f: self.mappings = loads(f.read())        
-        self.mappings = {} if self.profile['School'] not in self.mappings else self.mappings[self.profile['School']]
-
-        # Load the mappings for the school into the CourseParser.
-        self.course_parser = CourseParser(self.mappings)
     
     def _split_n_chunks(self, large_list: list, n: int) -> list[list]:
         """An internal function that splits a large list into n different chunks. Generated via ChatGPT.
@@ -323,7 +326,7 @@ class Parser:
                     # If descriptions and extra info are being parsed, then visit all their saved path's and append info.
                     if self.get_course_desc or self.get_extra_course_info:
                         LOGGER.info(f'{logger_prefix} | Total Paths Count: {2 * len(self.course_parser.desc_paths)}')
-                        asyncio.run(self._visit_paths())
+                        asyncio.run(self._visit_paths(logger_prefix))
                         LOGGER.info(f'{logger_prefix} | Successfully Parsed Course Descriptions and Registration Availability.')
                     
                         for course, desc, extra_info in zip(courses, self.course_desc, self.extra_course_info): # Unpacking
@@ -350,38 +353,39 @@ class Parser:
         #with open('table.json', 'w', encoding='UTF-8') as f: f.write(dumps(calendars, indent=4))
         return calendars
             
-    async def _visit_paths(self) -> None:
+    async def _visit_paths(self, logger_prefix: str) -> None:
         """An internal async function that visits all the Course description and registration availability paths.
         """   
         # Main Problem: Too many coroutines/futures to evaluate (at once) and timeouts occur as a result.
         # Solution: Evaluate in chunks. Using Semaphores was not that helpful.
         
-        # If evaluating all paths at once, setting a timeout (as function of number of paths) will help avoid timeout errors
-        if self.profile['Chunk Load']: self.async_session.timeout = ceil(60 * (len(self.course_parser.desc_paths) / 20))
-        
-        async with self.async_session as async_session:
+        # Get new async session everytime (as session closes after this function)
+        async with self._get_async_session() as async_session:
+            # If evaluating all paths at once, setting a timeout (as function of number of paths) will help avoid timeout errors
+            if self.profile['Chunk Load']: async_session.timeout = ceil(60 * (len(self.course_parser.desc_paths) / 20))
+            
             try:
                 # Course Descriptions
                 if not self.profile['Chunk Load']:                    
                     tasks = [self._get_desc(async_session, path) for path in self.course_parser.desc_paths]
-                    self.course_desc = await tqdm.asyncio.tqdm.gather(*tasks, desc=f'[{self.profile["School"]}] | Course Descriptions')
+                    self.course_desc = await tqdm.gather(*tasks, desc=f'{logger_prefix}| Course Descriptions')
                 else:
                     chunks = self._split_n_per_chunk(self.course_parser.desc_paths, 2000)
                     for chunk in chunks:
                         tasks = [self._get_desc(async_session, path) for path in chunk]
-                        self.course_desc += await tqdm.asyncio.tqdm.gather(*tasks, desc=f'[{self.profile["School"]}] | Course Descriptions (Chunk {chunks.index(chunk) + 1})')
-                LOGGER.info(f'[{self.profile["School"]}] | Finished Scraping Course Description.')
+                        self.course_desc += await tqdm.gather(*tasks, desc=f'{logger_prefix} | Course Descriptions (Chunk {chunks.index(chunk) + 1})')
+                LOGGER.info(f'{logger_prefix} | Finished Scraping Course Description.')
 
                 # Extra Course Infos
                 if not self.profile['Chunk Load']:
                     tasks = [self._get_extra_course_info(async_session, path) for path in self.course_parser.extra_course_info_paths]
-                    self.extra_course_info = await tqdm.asyncio.tqdm.gather(*tasks, desc=f'[{self.profile["School"]}] | Registration Availability')
+                    self.extra_course_info = await tqdm.gather(*tasks, desc=f'{logger_prefix} | Registration Availability')
                 else:
                     chunks = self._split_n_per_chunk(self.course_parser.extra_course_info_paths, 2000)
                     for chunk in chunks:
                         tasks = [self._get_extra_course_info(async_session, path) for path in chunk]
-                        self.extra_course_info += await tqdm.asyncio.tqdm.gather(*tasks, desc=f'[{self.profile["School"]}] | Registration Availability (Chunk {chunks.index(chunk) + 1})')
-                LOGGER.info(f'[{self.profile["School"]}] | Finished Scraping Registration Availability.')
+                        self.extra_course_info += await tqdm.gather(*tasks, desc=f'{logger_prefix} | Registration Availability (Chunk {chunks.index(chunk) + 1})')
+                LOGGER.info(f'{logger_prefix} | Finished Scraping Registration Availability.')
             except Exception as e: LOGGER.exception(f'Type: {type(e)} | Error: {e}')
     
     async def _get_desc(self, async_session: AsyncClient, path: str) -> str:
@@ -395,7 +399,7 @@ class Parser:
             str: Course description.
         """
         try:
-            self.async_session.headers['Referer'] = str(self.async_session.base_url) + '/bwckschd.p_get_crse_unsec'
+            async_session.headers['Referer'] = str(async_session.base_url) + '/bwckschd.p_get_crse_unsec'
             a = await async_session.get(path)
             if '>Catalog Entries<' in a.text:
                 soup = BeautifulSoup(a.content, features='html.parser')
@@ -416,7 +420,7 @@ class Parser:
             dict: Registration availbility information of a Course.
         """
         try:
-            self.async_session.headers['Referer'] = str(self.async_session.base_url) + '/bwckschd.p_get_crse_unsec'
+            async_session.headers['Referer'] = str(async_session.base_url) + '/bwckschd.p_get_crse_unsec'
             a = await async_session.get(path)
             if '>Detailed Class Information<' in a.text:
                 soup = BeautifulSoup(a.content, features='html.parser')

@@ -1,0 +1,13 @@
+@import "https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@300;400;500&display=swap";
+
+#fileLoading {
+    font-family: 'Roboto Slab', serif;
+    width: 25%;
+    text-align: center;
+    margin: auto;
+}
+
+.format-properties-table, .meeting-time {
+    border-collapse: collapse;
+    border: 1px solid #ffffff;
+}

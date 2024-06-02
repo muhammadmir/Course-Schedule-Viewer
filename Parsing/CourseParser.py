@@ -171,11 +171,11 @@ class CourseParser:
                         course['Properties'].append({
                             'Type': 'TBA',
                             'Time': 'TBA',
-                            'Days': 'TBA',
+                            'Days': ['TBA'],
                             'Location': 'TBA',
                             'Period': 'TBA',
                             'Nature': 'TBA',
-                            'Instructors': 'TBA'
+                            'Instructors': ['TBA']
                         })
                             
                     courses.append(course)

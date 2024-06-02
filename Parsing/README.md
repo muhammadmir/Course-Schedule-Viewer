@@ -1,22 +1,30 @@
 # Introduction
-Some schools utilize the services of Ellucian Company to allow students to do several Registrar-related things, including viewing and searching for courses. The software these schools are using is *probably* called [Ellucian Banner](https://www.ellucian.com/solutions/ellucian-banner), which several functionalities. The one this project is concerned about is the ability to view Course information like name, description, subject, etc.
+Some schools utilize the services of Ellucian Company to allow students to do several Registrar-related things, including viewing and searching for courses. The software these schools are using is *probably* called [Ellucian Banner](https://www.ellucian.com/solutions/ellucian-banner), which has several functionalities. The functionality this project is concerned about is the ability to view Course information like name, description, subject, etc.
 
-The purpose of this part of the project was build an API to scrape and parse Course information in a nice and dynamic format that supported any school using the same software. This was achieved by sending HTTP requests using the public API scheme the user uses, which is consistent across all schools using Ellucian Banner.
+The purpose of this part of the project was build an API to scrape and parse Course information in a nice and dynamic format. For bonus points, I added support for any school also using the same software for Course search and viewing. This was achieved by sending and parsing HTTP requests using the public API scheme the user uses, which is consistent across all schools using Ellucian Banner. *Please note that this project was tested on 3 different schools.*
+
 
 The complete project has two parts:
 1. [Parsing](../Parsing/) - The scraping and parsing of the Courses from Ellucian Banner API
-2. [Displaying](../Displaying/) - Front/backend of displaying results from Parsing
+2. [Displaying](../Displaying/) - Using DataTables to display results from Parsing
 
-This folder is concerned with the Parsing portion.
+This project is licensed under the MIT license.
 
 ## Definitions
-- Calendar: a term or semester where a set of Courses are offered
-- Course a college class offered during a particular Calendar and its corresponding properties
+- **Calendar**: a term or semester where a set of Courses are offered
+- **Course**: a college class offered during a particular Calendar (and its corresponding properties)
 
-## Overview
-I used Drew University, Georgia Tech University, and Purdue University as the case studies. These schools, and among others, offer the ability to view Course information through a "Dynamic Schedule." The Dynamic Schedule allows the user to select a Calendar. From there, the user can perform a "Class Schedule Search" to find Courses based on specific information like subject, instructor, class days, etc. After a search is made, all the results are displayed as the "Class Schedule Listing" where all the information for every Course is displayed as a big table, except the following pieces of information: description, registration availability (capacity, number of students registered, number of students waitlisted).
+# Overview
+I used Drew University, Georgia Tech University, and Purdue University as the case studies. Below I speak in the general case where I am applying the knowledge I collected from working with these 3 schools.
 
-All requests follow a structured format: they must have a Base Host (i.e., `selfservice.drew.edu`) and Base Path (ie., `/prod`). After appending the Base Host to the Base Path, the next path will determine the action. Together, this forms a complete URL. Below I list the most important paths, aside from the Base Path.
+Schools utilizing Ellucian Banner might offer a way to view Course information publicly through a page called the "Dynamic Schedule." The Dynamic Schedule allows the user to select a  Calendar. Note that archived Calendars from prior years might also be available for searching.
+
+After selecting a Calendar, the user can perform a "Class Schedule Search" to find Courses based on specific information like subject, instructor, class days, etc. The functionality for filtering is limited, which was an inspiration for the [second](../Displaying/) part of this project.
+
+After a search is made, all the results are displayed as the "Class Schedule Listing" where all the information for every Course is displayed as a big table, except the following pieces of information: description, registration availability (capacity, number of students registered, number of students waitlisted). All of the results lack in aesthetic and functional appeal, which is addressed in the [second](../Displaying/) part of this project.
+
+Each page and corresponding action can be represented through HTTP requests. All requests follow a structured format: they must have a Base Host (i.e., `selfservice.drew.edu`) and Base Path (ie., `/prod`). After appending the Base Host to the Base Path (i.e, `selfservice.drew.edu/prod`), the next appended path will determine the action. Together, this forms a complete URL. Below I list the most important paths, aside from the Base Path.
+
 1. `/bwckschd.p_disp_dyn_sched` A GET request to load the Dynamic Schedule.
 2. `bwckgens.p_proc_term_date` A POST request to determine which Calendar to select, which leads to loading the Class Schedule Search.
 3. `bwckschd.p_get_crse_unsec` A POST request to search for a subset of Courses, which leads to loading the Class Schedule Listing.
@@ -25,7 +33,7 @@ All requests follow a structured format: they must have a Base Host (i.e., `self
 
 For the most part, information displayed at each page is consistent and allows the ability to (somewhat) reliably scrape the necessary information. In the next section, I break down the key data structures of this part of the project.
 
-Note: For each Course, there are 2 additional requests (Detailed Information Section, Catalog Entry) made to scrape additional information. Additionally, the number of requests to load all the Courses for any Calendar can vary. If $n$ is the number of subjects for a Calendar and `Chunk Load` is set to true in [profiles.json](#profilesjson), then the maximum number of requests is $3 + ceil(n / 5)$. Otherwise, it is $3$. Chunk Loading should be set to true for schools that typically offer a lot (5000+) Courses for a typical Calendar.
+**Note**: For each Course, there are 2 additional requests (Detailed Information Section, Catalog Entry) made to scrape additional information. Additionally, the number of requests to load all the Courses for any Calendar can vary. If $n$ is the number of subjects for a Calendar and `Chunk Load` is set to true in [profiles.json](#profilesjson), then the maximum number of requests is $3 + ceil(n / 5)$. Otherwise, it is $3$. Chunk Loading should be set to true for schools that typically offer a lot (5000+) Courses for a typical Calendar.
 
 ## Structure of Data
 Every Calendar has a set of Courses, and each Course has properties. Calendars and Courses are fundamentally objects and below, I break down the properties of each object.
@@ -75,9 +83,9 @@ Instructors - A set of names of the instructors of the Course
 Below I will briefly highlight the purpose and functionality of the files in this folder. Since all the functions have documentation, I will not be going into the specifics here.
 
 ### [mappings.json](./mappings.json)
-Contains a single object, where each key is the full name of the school (i.e., Drew University). The value of the key is a object where its corresponding keys and values represent the relationship between the abbreviated subject (the key) and the full subject (the value). This data is used to determine the full subject associated with a Course from the Class Schedule Listing.
+Contains a single object, where each key is the full name of the school (i.e., Drew University) and its value is an object. The object contains a set of subject mappings the school has utilized in prior Calendars or is utilizing. The values are the subjects (i.e., Mathematics) and their correspond keys are the abbreviated versions of the subjects (i.e., MATH). This data is used to determine the full subject associated with a Course from the Class Schedule Listing.
 
-Note: mappings.json is dynamically updated every time Courses are scraped and fetched using the [Parser](#parserpy) class.
+**Note**: This file is dynamically updated every time Courses are scraped and fetched using the [Parser](#parserpy) class. We keep a copy for each school as not all schools will use the same mappings.
 
 ### [profiles.json](./profiles.json)
 Contains an array of objects, where each object is the information about a school using Ellucian Banner. All objects should have the following properties defined:
@@ -102,10 +110,19 @@ The main class that parses and processes everything. A Parser object has the fol
 3. `get_extra_course_info`
     Boolean that determines if an additional request for each Course should be made to scrape Course registration availability. Defaults to true.
 
+### [Tester.py](./Tester.py)
+Shows example usage of Parser.py.
 
-## Usage
-The following code demonstrates how to use the [Parser.py](#parserpy) class.
-```py
+# Usage
+First, the necessary packages can be installed by the following command:
+```
+pip install -r requirements.txt
+```
+
+Second, make sure the school you are interested is added into [profiles.json](./profiles.json). Again, the school should be using Ellucian Banner to show Course and Calendar information in a way described in the [Overview](#overview).
+
+The following code from [Tester.py](./Tester.py) demonstrates how to use the [Parser.py](#parserpy) class.
+```python
 from json import loads, dumps
 from Parser import Parser
 
@@ -127,8 +144,12 @@ parser = Parser(profile)
 # Get list of Calendar objects.
 calendars = parser.get_calendars(all_calendars=True)
 
-# Get all Courses for first Calendar (they are in order of most recent).
-courses = parser.get_courses([calendars[0]]) # Expects a list of Calendar objects.
+# Select Calendar(s) that match a specific name.
+calendars = [calendar for calendar in calendars if calendar['Calendar Name'] == 'Fall 2024']
+
+# Get Courses.
+courses = parser.get_courses(calendars) # Expects a list of Calendar objects.
+
 
 # Output as JSON.
 with open('./Output.json', 'w', encoding='UTF-8') as f: f.write(dumps(courses, indent=4))
@@ -238,6 +259,9 @@ The output would look something like the following:
 ]
 ```
 
-## Notes
-To do...
-1. Asynchronous Functionality
+# Notes
+## Similar Project
+This part of the project is similar to the following [project](https://github.com/alec-rabold/UnofficialEllucianBannerApi) by alec-rabold, which seems out-of-date. Though I do not provide code for creating a REST API, it can be very easily done. The main purpose of the code in this folder is to provide a thorough output that can be utilized to intuitively display the results in the [second](../Displaying/) part of the project.
+
+##  Asynchronous Functionality and Progress Bars
+Because of the number of paths to visit to get Course description and registration availability information can be large, using async functionality dramatically decreases the processing time. However, this feature is not perfect and I have attempted to mitigate errors as best as I could. One thing to note is that connection errors do happen (a request to a Course description or registration availability is simply was not able to me made). I incorporated the use of progress bars to help illustrate the progress of the program when it is processing a Calendar with a large number of Courses.
