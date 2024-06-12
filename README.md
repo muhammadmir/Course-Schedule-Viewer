@@ -4,7 +4,7 @@ Some schools utilize the services of Ellucian Company to allow students to do se
 2) the interface utilized to display information about courses.
 
 As a result, this project has two parts:
-1. [Parsing](../Parsing/) - The scraping and parsing of the Courses from Ellucian Banner API
-2. [Displaying](../Displaying/) - Using DataTables to display results from Parsing
+1. [Parsing](./Parsing/) - The scraping and parsing of the Courses from Ellucian Banner API
+2. [Displaying](./Displaying/) - Using DataTables to display results from Parsing
 
 This project is licensed under the MIT license.
