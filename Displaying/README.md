@@ -13,7 +13,7 @@ This project is licensed under the MIT license.
 - **Calendar**: a term or semester where a set of Courses are offered
 - **Course**: a college class offered during a particular Calendar (and its corresponding properties)
 
-To view the interface live, please navigate [here](./main.html).
+To view the interface live, please download everything in this this folder (Displaying) and open the main.html file.
 
 # Overview and Functionality
 This part of the project is not hosted on a server and hence requires the user to upload the output JSON file from the first part of the project. I made the choice of using the Bootstrap framework to build the frontend, along with DataTables for displaying the main table. Below, I will describe the functionality of the website.
